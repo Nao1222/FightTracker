@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COMBAT TRACKER</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --red:    #e01010;
+  --red-lo: rgba(224,16,16,0.12);
+  --bg:     #09090c;
+  --card:   #111116;
+  --line:   #1e1e28;
+  --muted:  #55556a;
+  --text:   #e8e8f2;
+  --gold:   #f0c040;
+  --silver: #a0a0b8;
+  --bronze: #b07040;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+header {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+  position: sticky; top: 0; z-index: 100;
+}
+
+.logo {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: var(--red);
+}
+
+.hright { display: flex; align-items: center; gap: 10px; }
+
+/* ── BUTTONS ── */
+.btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  letter-spacing: .5px;
+  transition: all .18s;
+}
+.btn-red  { background: var(--red); color: #fff; }
+.btn-red:hover { filter: brightness(1.2); }
+.btn-ghost { background: transparent; border-color: var(--line); color: var(--muted); }
+.btn-ghost:hover { border-color: var(--muted); color: var(--text); }
+.btn-sm   { font-size: 11px; padding: 4px 10px; border-radius: 4px; }
+.btn-edit { border: 1px solid #1a3550; color: #4a90c4; background: transparent; }
+.btn-edit:hover { border-color: #4a90c4; background: rgba(74,144,196,.08); }
+.btn-del  { border: 1px solid #3a1515; color: #c44a4a; background: transparent; }
+.btn-del:hover  { border-color: var(--red); background: rgba(224,16,16,.08); }
+
+/* ── ADMIN BADGE ── */
+.badge-admin {
+  font-size: 10px; font-weight: 700;
+  padding: 3px 10px; border-radius: 4px;
+  background: var(--red-lo);
+  border: 1px solid #5a1010;
+  color: var(--red);
+  letter-spacing: 1px;
+}
+
+/* ── MAIN ── */
+main { max-width: 860px; margin: 0 auto; padding: 32px 20px; }
+
+/* ── SORT TABS ── */
+.toolbar {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 20px;
+}
+
+.tab-group { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.tab {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px; font-weight: 600;
+  padding: 8px 20px;
+  border: none; cursor: pointer;
+  background: transparent;
+  color: var(--muted);
+  transition: all .18s;
+  letter-spacing: .5px;
+}
+.tab.on { background: var(--red); color: #fff; }
+.tab:not(.on):hover { background: var(--red-lo); color: var(--text); }
+
+.count { margin-left: auto; font-size: 12px; color: var(--muted); }
+.count b { color: var(--text); }
+
+/* ── TABLE ── */
+.box {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+table { width: 100%; border-collapse: collapse; }
+
+thead tr { border-bottom: 1px solid var(--line); }
+th {
+  padding: 12px 20px;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: left;
+}
+th.r, td.r { text-align: right; }
+th.c, td.c { text-align: center; }
+
+/* ── ROW ANIMATIONS ── */
+@keyframes rowIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes rankFlash {
+  0%   { background: rgba(224,16,16,.35); }
+  100% { background: transparent; }
+}
+@keyframes rankBounce {
+  0%,100% { transform: scale(1); }
+  40%     { transform: scale(1.35); }
+  70%     { transform: scale(.92); }
+}
+
+tbody tr {
+  border-bottom: 1px solid rgba(30,30,40,.8);
+  transition: background .15s;
+  animation: rowIn .25s ease both;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,.02); }
+tbody tr.flash { animation: rankFlash .7s ease both; }
+tbody tr.bounce-rank .rank-num { animation: rankBounce .5s ease both; }
+
+td { padding: 16px 20px; }
+
+/* rank */
+td.rank-col { width: 64px; }
+.rank-num {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px; font-weight: 700;
+}
+.r1 { background: rgba(240,192,64,.15); color: var(--gold); }
+.r2 { background: rgba(160,160,184,.1); color: var(--silver); }
+.r3 { background: rgba(176,112,64,.12); color: var(--bronze); }
+.rn { background: var(--line); color: var(--muted); font-size: 12px; }
+
+/* player id */
+td.id-col { font-weight: 600; font-size: 15px; }
+
+/* stat */
+td.stat {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px; font-weight: 700;
+}
+td.stat.hi { color: var(--red); }
+
+/* actions */
+td.act { width: 130px; }
+.act-row { display: flex; gap: 6px; }
+
+/* ── EMPTY ── */
+.empty {
+  text-align: center;
+  padding: 64px 20px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.empty-icon {
+  font-size: 32px; margin-bottom: 12px;
+  opacity: .3;
+}
+
+/* ── MODAL ── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.75);
+  align-items: center; justify-content: center;
+  z-index: 200; backdrop-filter: blur(6px);
+}
+.overlay.show { display: flex; }
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--red);
+  border-radius: 12px;
+  padding: 28px;
+  width: 100%; max-width: 380px;
+  position: relative;
+  box-shadow: 0 24px 60px rgba(0,0,0,.6);
+}
+
+.modal-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px; letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 22px;
+}
+
+.xbtn {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: none;
+  color: var(--muted); font-size: 18px;
+  cursor: pointer; line-height: 1;
+}
+.xbtn:hover { color: var(--text); }
+
+.field { margin-bottom: 14px; }
+label {
+  display: block;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 6px;
+}
+input[type=text], input[type=password], input[type=number] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color .15s;
+}
+input:focus { border-color: var(--red); }
+
+.err {
+  color: #e05555; font-size: 12px;
+  margin-top: 8px; display: none;
+}
+
+.modal-foot {
+  display: flex; justify-content: flex-end;
+  gap: 8px; margin-top: 20px;
+}
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--red);
+  border-radius: 8px;
+  padding: 11px 18px;
+  font-size: 13px; font-weight: 500;
+  z-index: 999;
+  transform: translateY(60px); opacity: 0;
+  transition: all .25s;
+  pointer-events: none;
+}
+#toast.show { transform: translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TRACKER</div>
+  <div class="hright">
+    <span class="badge-admin" id="abadge" style="display:none">ADMIN</span>
+    <button class="btn btn-ghost" id="loginBtn" onclick="openLogin()">ログイン</button>
+    <button class="btn btn-ghost" id="logoutBtn" style="display:none" onclick="doLogout()">ログアウト</button>
+    <button class="btn btn-red"  id="addBtn"    style="display:none" onclick="openAdd()">＋ 追加</button>
+  </div>
+</header>
+
+<main>
+  <div class="toolbar">
+    <div class="tab-group">
+      <button class="tab on" id="tabPow" onclick="setSort('power')">⚡ 戦力順</button>
+      <button class="tab"    id="tabKil" onclick="setSort('kills')">💀 撃破順</button>
+    </div>
+    <span class="count"><b id="cnt">0</b> 人</span>
+  </div>
+
+  <div class="box">
+    <table>
+      <thead>
+        <tr>
+          <th class="c">順位</th>
+          <th>プレイヤー ID</th>
+          <th class="r" id="thPow">⚡ 戦力</th>
+          <th class="r" id="thKil">💀 総撃破数</th>
+          <th class="c" id="thAct" style="display:none">操作</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty" id="empty" style="display:none">
+      <div class="empty-icon">📋</div>
+      データがありません
+    </div>
+  </div>
+</main>
+
+<!-- LOGIN -->
+<div class="overlay" id="loginModal">
+  <div class="modal">
+    <div class="modal-title">🔐 Admin Login</div>
+    <button class="xbtn" onclick="close_('loginModal')">✕</button>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="pwIn" placeholder="••••••••"
+             onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="err" id="pwErr">パスワードが違います</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="close_('loginModal')">キャンセル</button>
+      <button class="btn btn-red"   onclick="doLogin()">ログイン</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT -->
+<div class="overlay" id="entryModal">
+  <div class="modal">
+    <div class="modal-title" id="eTitle">＋ 新規登録</div>
+    <button class="xbtn" onclick="close_('entryModal')">✕</button>
+    <input type="hidden" id="eIdx" value="-1">
+    <div class="field">
+      <label>Player ID</label>
+      <input type="text" id="eId" placeholder="ID を入力">
+    </div>
+    <div class="field">
+      <label>戦力</label>
+      <input type="number" id="ePow" placeholder="0" min="0">
+    </div>
+    <div class="field">
+      <label>総撃破数</label>
+      <input type="number" id="eKil" placeholder="0" min="0">
+    </div>
+    <div class="err" id="eErr">すべて入力してください</div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="close_('entryModal')">キャンセル</button>
+      <button class="btn btn-red"   onclick="saveEntry()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── CONFIG ──
+const HASH = '4428f0d2695d5fc8c50097e3d77787788d8bddb515c23591fc9bc51efcd35fa0';
+const KEY  = 'ct_v2';
+
+// ── STATE ──
+let rows    = JSON.parse(localStorage.getItem(KEY) || '[]');
+let sort    = 'power';
+let admin   = false;
+let prevRanks = {};   // id → rank, for detecting changes
+
+// ── SHA-256 ──
+async function sha256(s) {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+// ── AUTH ──
+async function doLogin() {
+  const h = await sha256(document.getElementById('pwIn').value);
+  if (h === HASH) {
+    admin = true;
+    close_('loginModal');
+    document.getElementById('abadge').style.display   = '';
+    document.getElementById('loginBtn').style.display = 'none';
+    document.getElementById('logoutBtn').style.display = '';
+    document.getElementById('addBtn').style.display   = '';
+    document.getElementById('thAct').style.display    = '';
+    render(); toast('ログイン成功 ✔');
+  } else {
+    document.getElementById('pwErr').style.display = 'block';
+    document.getElementById('pwIn').value = '';
+    document.getElementById('pwIn').focus();
+  }
+}
+function doLogout() {
+  admin = false;
+  document.getElementById('abadge').style.display    = 'none';
+  document.getElementById('loginBtn').style.display  = '';
+  document.getElementById('logoutBtn').style.display = 'none';
+  document.getElementById('addBtn').style.display    = 'none';
+  document.getElementById('thAct').style.display     = 'none';
+  render(); toast('ログアウトしました');
+}
+
+// ── SORT ──
+function setSort(s) {
+  sort = s;
+  document.getElementById('tabPow').classList.toggle('on', s==='power');
+  document.getElementById('tabKil').classList.toggle('on', s==='kills');
+  render();
+}
+
+function sorted() {
+  return [...rows].sort((a,b) => sort==='power' ? b.power-a.power : b.kills-a.kills);
+}
+
+// ── SAVE ──
+function persist() {
+  localStorage.setItem(KEY, JSON.stringify(rows));
+}
+
+// ── COUNT-UP ──
+function countUp(el, target) {
+  const dur = 600, steps = 30;
+  let i = 0;
+  const iv = setInterval(() => {
+    i++;
+    el.textContent = Math.round(target * (i/steps)).toLocaleString();
+    if (i >= steps) { clearInterval(iv); el.textContent = target.toLocaleString(); }
+  }, dur/steps);
+}
+
+// ── RENDER ──
+function render() {
+  const list   = sorted();
+  const tbody  = document.getElementById('tbody');
+  const empty  = document.getElementById('empty');
+  document.getElementById('cnt').textContent = rows.length;
+
+  if (!list.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  // detect rank changes
+  const newRanks = {};
+  list.forEach((p,i) => newRanks[p.id] = i+1);
+
+  tbody.innerHTML = '';
+
+  list.forEach((p, i) => {
+    const rank = i + 1;
+    const rClass = rank===1?'r1':rank===2?'r2':rank===3?'r3':'rn';
+    const rLabel = rank<=3 ? ['🥇','🥈','🥉'][rank-1] : rank;
+    const origIdx = rows.indexOf(p);
+    const changed = prevRanks[p.id] !== undefined && prevRanks[p.id] !== rank;
+
+    const tr = document.createElement('tr');
+    tr.style.animationDelay = (i * 35) + 'ms';
+    if (changed) tr.classList.add('flash');
+
+    const powHi = sort==='power' ? ' hi':'';
+    const kilHi = sort==='kills' ? ' hi':'';
+
+    tr.innerHTML = `
+      <td class="rank-col c">
+        <span class="rank-num ${rClass}">${rLabel}</span>
+      </td>
+      <td class="id-col">${esc(p.id)}</td>
+      <td class="stat r${powHi}" data-val="${p.power}"></td>
+      <td class="stat r${kilHi}" data-val="${p.kills}"></td>
+      ${admin ? `<td class="act c"><div class="act-row">
+        <button class="btn btn-sm btn-edit" onclick="openEdit(${origIdx})">編集</button>
+        <button class="btn btn-sm btn-del"  onclick="delEntry(${origIdx})">削除</button>
+      </div></td>` : ''}
+    `;
+
+    if (changed) {
+      setTimeout(() => tr.classList.add('bounce-rank'), 20);
+    }
+
+    tbody.appendChild(tr);
+
+    // count-up for stat cells
+    tr.querySelectorAll('[data-val]').forEach(td => {
+      countUp(td, parseInt(td.dataset.val));
+    });
+  });
+
+  prevRanks = newRanks;
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ── CRUD ──
+function saveEntry() {
+  const id   = document.getElementById('eId').value.trim();
+  const pow  = parseInt(document.getElementById('ePow').value);
+  const kil  = parseInt(document.getElementById('eKil').value);
+  const idx  = parseInt(document.getElementById('eIdx').value);
+  const err  = document.getElementById('eErr');
+
+  if (!id || isNaN(pow) || isNaN(kil)) { err.style.display='block'; return; }
+  err.style.display = 'none';
+
+  if (idx === -1) {
+    rows.push({id, power:pow, kills:kil});
+    toast('追加しました: ' + id);
+  } else {
+    rows[idx] = {id, power:pow, kills:kil};
+    toast('更新しました: ' + id);
+  }
+  persist(); render(); close_('entryModal');
+}
+
+function delEntry(idx) {
+  if (!confirm(`「${rows[idx].id}」を削除しますか？`)) return;
+  const name = rows[idx].id;
+  rows.splice(idx,1);
+  persist(); render();
+  toast('削除しました: ' + name);
+}
+
+// ── MODALS ──
+function openLogin() {
+  document.getElementById('pwIn').value = '';
+  document.getElementById('pwErr').style.display = 'none';
+  show('loginModal');
+  setTimeout(()=>document.getElementById('pwIn').focus(),80);
+}
+function openAdd() {
+  document.getElementById('eTitle').textContent = '＋ 新規登録';
+  document.getElementById('eIdx').value = '-1';
+  ['eId','ePow','eKil'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('eErr').style.display = 'none';
+  show('entryModal');
+  setTimeout(()=>document.getElementById('eId').focus(),80);
+}
+function openEdit(idx) {
+  const p = rows[idx];
+  document.getElementById('eTitle').textContent = '✏ 編集';
+  document.getElementById('eIdx').value  = idx;
+  document.getElementById('eId').value   = p.id;
+  document.getElementById('ePow').value  = p.power;
+  document.getElementById('eKil').value  = p.kills;
+  document.getElementById('eErr').style.display = 'none';
+  show('entryModal');
+}
+
+function show(id)  { document.getElementById(id).classList.add('show'); }
+function close_(id){ document.getElementById(id).classList.remove('show'); }
+
+document.querySelectorAll('.overlay').forEach(el=>{
+  el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('show'); });
+});
+
+// ── TOAST ──
+let tid;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(tid);
+  tid = setTimeout(()=>el.classList.remove('show'), 2600);
+}
+
+// ── INIT ──
+render();
+</script>
+</body>
+</html>
